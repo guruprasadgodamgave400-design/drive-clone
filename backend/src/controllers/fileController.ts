@@ -40,13 +40,26 @@ export const getFiles = async (req: AuthRequest, res: Response) => {
         if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
         const folderId = req.query.folderId as string || null;
         const isDeleted = req.query.deleted === 'true';
+        const isStarred = req.query.starred === 'true';
+        const isRecent = req.query.recent === 'true';
+
+        let whereClause: any = {
+            userId: req.user.id,
+            isDeleted: isDeleted,
+        };
+
+        if (isStarred) {
+            whereClause.isStarred = true;
+        } else if (isRecent) {
+            // Recent ignores folder tree and just gets newest files
+        } else {
+            whereClause.folderId = folderId;
+        }
 
         const files = await prisma.file.findMany({
-            where: {
-                userId: req.user.id,
-                folderId: folderId,
-                isDeleted: isDeleted,
-            },
+            where: whereClause,
+            orderBy: isRecent ? { updatedAt: 'desc' } : undefined,
+            take: isRecent ? 20 : undefined,
         });
 
         res.json(files);
@@ -97,6 +110,25 @@ export const toggleTrashStatus = async (req: AuthRequest, res: Response, isDelet
 
 export const softDeleteFile = (req: AuthRequest, res: Response) => toggleTrashStatus(req, res, true);
 export const restoreFile = (req: AuthRequest, res: Response) => toggleTrashStatus(req, res, false);
+
+export const toggleStarStatus = async (req: AuthRequest, res: Response) => {
+    try {
+        if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+        const { id } = req.params;
+        const { isStarred } = req.body;
+
+        const updated = await prisma.file.updateMany({
+            where: { id, userId: req.user.id },
+            data: { isStarred },
+        });
+
+        if (updated.count === 0) return res.status(404).json({ error: 'File not found' });
+        res.json({ message: 'File star status updated' });
+    } catch (error) {
+        console.error('Star status error:', error);
+        res.status(500).json({ error: 'Failed to update star status' });
+    }
+};
 
 export const searchFiles = async (req: AuthRequest, res: Response) => {
     try {

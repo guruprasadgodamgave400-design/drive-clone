@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useFileStore, FileItem } from '../stores/useFileStore';
-import { Folder as FolderIcon, File as FileIcon, MoreVertical, Trash2, Edit2, Share2, RefreshCw, Download } from 'lucide-react';
+import { Folder as FolderIcon, File as FileIcon, MoreVertical, Trash2, Edit2, Share2, RefreshCw, Download, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { Menu, Transition } from '@headlessui/react';
 import toast from 'react-hot-toast';
@@ -22,7 +22,8 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ searchQuery }) => {
         deleteFile,
         renameFile,
         restoreFile,
-        getShareLink
+        getShareLink,
+        toggleStar
     } = useFileStore();
 
     const [debouncedSearch] = useDebounce(searchQuery, 300);
@@ -78,10 +79,19 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ searchQuery }) => {
         }
     };
 
+    const getViewTitle = () => {
+        switch (currentView) {
+            case 'trash': return 'Trash';
+            case 'recent': return 'Recent Files';
+            case 'starred': return 'Starred';
+            default: return 'My Drive';
+        }
+    };
+
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-slate-900">{currentView === 'trash' ? 'Trash' : 'My Drive'}</h1>
+                <h1 className="text-2xl font-bold text-slate-900">{getViewTitle()}</h1>
                 {/* Breadcrumbs can go here */}
             </div>
 
@@ -127,9 +137,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ searchQuery }) => {
                                 {filteredFiles.map((file) => (
                                     <tr key={file.id} className="hover:bg-slate-50 group transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center cursor-pointer" onClick={() => handleDownload(file)}>
-                                                <FileIcon className="flex-shrink-0 h-5 w-5 text-indigo-400" />
-                                                <span className="ml-3 text-sm font-medium text-slate-900 max-w-[200px] truncate">{file.name}</span>
+                                            <div className="flex items-center">
+                                                <div className="flex items-center cursor-pointer" onClick={() => handleDownload(file)}>
+                                                    <FileIcon className="flex-shrink-0 h-5 w-5 text-indigo-400" />
+                                                    <span className="ml-3 text-sm font-medium text-slate-900 max-w-[200px] truncate">{file.name}</span>
+                                                </div>
+                                                {file.isStarred && <Star className="ml-2 h-4 w-4 text-yellow-400 fill-current" />}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
@@ -166,6 +179,13 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ searchQuery }) => {
                                                                         {({ active }) => (
                                                                             <button onClick={() => handleRename(file)} className={`${active ? 'bg-indigo-500 text-white' : 'text-slate-900'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
                                                                                 <Edit2 className="mr-2 h-4 w-4" /> Rename
+                                                                            </button>
+                                                                        )}
+                                                                    </Menu.Item>
+                                                                    <Menu.Item>
+                                                                        {({ active }) => (
+                                                                            <button onClick={() => toggleStar(file.id, !file.isStarred)} className={`${active ? 'bg-indigo-500 text-white' : 'text-slate-900'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
+                                                                                <Star className={`mr-2 h-4 w-4 ${file.isStarred ? 'fill-current text-yellow-500' : ''}`} /> {file.isStarred ? 'Remove Star' : 'Add Star'}
                                                                             </button>
                                                                         )}
                                                                     </Menu.Item>

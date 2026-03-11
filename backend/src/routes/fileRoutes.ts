@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { uploadFile, getFiles, renameFile, softDeleteFile, restoreFile, searchFiles } from '../controllers/fileController';
+import { uploadFile, getFiles, renameFile, softDeleteFile, restoreFile, searchFiles, toggleStarStatus } from '../controllers/fileController';
 import { authenticateToken } from '../middleware/auth';
 import { upload } from '../middleware/upload';
 
@@ -16,5 +16,6 @@ router.get('/', authenticateToken, getFiles as any);
 router.put('/:id', authenticateToken, renameFile as any);
 router.delete('/:id/trash', authenticateToken, softDeleteFile as any);
 router.post('/:id/restore', authenticateToken, restoreFile as any);
+router.put('/:id/star', authenticateToken, toggleStarStatus as any);
 
 export default router;

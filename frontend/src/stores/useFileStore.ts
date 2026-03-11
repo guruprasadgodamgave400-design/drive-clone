@@ -8,6 +8,7 @@ export interface FileItem {
     type: string;
     folderId: string | null;
     isDeleted: boolean;
+    isStarred: boolean;
     createdAt: string;
     updatedAt: string;
 }
@@ -24,7 +25,7 @@ interface FileStoreState {
     files: FileItem[];
     folders: FolderItem[];
     currentFolderId: string | null;
-    currentView: 'drive' | 'trash';
+    currentView: 'drive' | 'trash' | 'recent' | 'starred';
     isLoading: boolean;
     fetchContents: (folderId: string | null) => Promise<void>;
     createFolder: (name: string, parentId: string | null) => Promise<void>;
@@ -33,9 +34,10 @@ interface FileStoreState {
     renameFolder: (id: string, newName: string) => Promise<void>;
     deleteFolder: (id: string) => Promise<void>;
     setCurrentFolder: (folderId: string | null) => void;
-    setCurrentView: (view: 'drive' | 'trash') => void;
+    setCurrentView: (view: 'drive' | 'trash' | 'recent' | 'starred') => void;
     getShareLink: (id: string) => Promise<string>;
     restoreFile: (id: string) => Promise<void>;
+    toggleStar: (id: string, isStarred: boolean) => Promise<void>;
 }
 
 export const useFileStore = create<FileStoreState>((set, get) => ({
@@ -139,6 +141,15 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
             get().fetchContents(get().currentFolderId);
         } catch (error) {
             console.error(error);
+        }
+    },
+
+    toggleStar: async (id, isStarred) => {
+        try {
+            await api.put(`/files/${id}/star`, { isStarred });
+            get().fetchContents(get().currentFolderId);
+        } catch (error) {
+            console.error('Failed to toggle star', error);
         }
     }
 }));
