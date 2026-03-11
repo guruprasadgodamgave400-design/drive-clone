@@ -60,19 +60,30 @@ export const useFileStore = create<FileStoreState>((set, get) => ({
     fetchContents: async (folderId) => {
         set({ isLoading: true });
         try {
-            const isTrash = get().currentView === 'trash';
-            const folderParam = folderId ? `?parentId=${folderId}` : '';
-            const fileParam = isTrash
-                ? '?deleted=true'
-                : (folderId ? `?folderId=${folderId}&deleted=false` : '?deleted=false');
+            const currentView = get().currentView;
+            const isTrash = currentView === 'trash';
+            const isStarred = currentView === 'starred';
+            const isRecent = currentView === 'recent';
+
+            const folderParam = folderId && !isRecent && !isStarred ? `?folderId=${folderId}` : '';
+            
+            let fileParam = '?';
+            if (isTrash) {
+                fileParam += 'deleted=true';
+            } else {
+                fileParam += 'deleted=false';
+                if (isStarred) fileParam += '&starred=true';
+                if (isRecent) fileParam += '&recent=true';
+                if (folderId && !isStarred && !isRecent) fileParam += `&folderId=${folderId}`;
+            }
 
             // Don't fetch folders if we are in trash, just assume flat file structure for now
             const [foldersRes, filesRes] = await Promise.all([
-                isTrash ? { data: [] } : api.get(`/folders${folderParam}`),
+                (isTrash || isStarred || isRecent) ? { data: [] } : api.get(`/folders${folderParam}`),
                 api.get(`/files${fileParam}`)
             ]);
 
-            set({ folders: isTrash ? [] : foldersRes.data, files: filesRes.data, isLoading: false });
+            set({ folders: (isTrash || isStarred || isRecent) ? [] : foldersRes.data, files: filesRes.data, isLoading: false });
         } catch (error) {
             console.error('Failed to fetch contents', error);
             set({ isLoading: false });
