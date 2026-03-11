@@ -38,6 +38,7 @@ export const uploadFile = async (req: AuthRequest, res: Response) => {
 export const getFiles = async (req: AuthRequest, res: Response) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+        console.log(`[getFiles API] URL: ${req.url}, query:`, req.query);
         const folderId = req.query.folderId as string || null;
         const isDeleted = req.query.deleted === 'true';
         const isStarred = req.query.starred === 'true';
@@ -61,6 +62,8 @@ export const getFiles = async (req: AuthRequest, res: Response) => {
             orderBy: isRecent ? { updatedAt: 'desc' } : undefined,
             take: isRecent ? 20 : undefined,
         });
+
+        console.log(`[getFiles API] Returning ${files.length} files. isStarred: ${isStarred}, whereClause:`, whereClause);
 
         res.json(files);
     } catch (error) {

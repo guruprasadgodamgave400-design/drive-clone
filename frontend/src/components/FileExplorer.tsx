@@ -63,8 +63,24 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ searchQuery }) => {
     const handleShare = async (file: FileItem) => {
         try {
             const link = await getShareLink(file.id);
-            await navigator.clipboard.writeText(link);
-            toast.success('Share link copied to clipboard!');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(link);
+                toast.success('Share link copied to clipboard!');
+            } else {
+                // Fallback for non-https local dev environments where clipboard API is blocked
+                const copyInput = document.createElement("input");
+                copyInput.value = link;
+                document.body.appendChild(copyInput);
+                copyInput.select();
+                try {
+                    document.execCommand("copy");
+                    toast.success('Share link copied to clipboard!');
+                } catch (err) {
+                    window.prompt("Your share link (Copy it below):", link);
+                } finally {
+                    document.body.removeChild(copyInput);
+                }
+            }
         } catch {
             toast.error('Failed to generate share link');
         }
