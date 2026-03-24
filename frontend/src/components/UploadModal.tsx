@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud, X, File as FileIcon } from 'lucide-react';
+import { UploadCloud, X } from 'lucide-react';
 import api from '../api/axios';
 import { useFileStore } from '../stores/useFileStore';
 import toast from 'react-hot-toast';

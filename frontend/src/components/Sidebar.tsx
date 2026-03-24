@@ -1,11 +1,24 @@
 import { useState } from 'react';
-import { HardDrive, Clock, Star, Trash2, Plus } from 'lucide-react';
+import { HardDrive, Clock, Star, Trash2, Plus, FolderPlus } from 'lucide-react';
 import UploadModal from './UploadModal';
 import { useFileStore } from '../stores/useFileStore';
+import toast from 'react-hot-toast';
 
 const Sidebar = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-    const { currentView, setCurrentView } = useFileStore();
+    const { currentView, setCurrentView, createFolder, currentFolderId } = useFileStore();
+
+    const handleNewFolder = async () => {
+        const name = prompt("Enter new folder name:");
+        if (name && name.trim()) {
+            try {
+                await createFolder(name.trim(), currentFolderId);
+                toast.success('Folder created');
+            } catch (error) {
+                toast.error('Failed to create folder');
+            }
+        }
+    };
 
     return (
         <div className="w-64 flex-shrink-0 flex flex-col pt-5 pb-4 bg-slate-50 border-r border-slate-200 h-full overflow-y-auto">
@@ -21,6 +34,13 @@ const Sidebar = () => {
                 >
                     <Plus className="mr-2 h-5 w-5" />
                     New File
+                </button>
+                <button
+                    onClick={handleNewFolder}
+                    className="w-full flex items-center justify-center px-4 py-3 border border-slate-200 text-sm font-medium rounded-xl text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors shadow-sm"
+                >
+                    <FolderPlus className="mr-2 h-5 w-5 text-indigo-500" />
+                    New Folder
                 </button>
             </div>
 

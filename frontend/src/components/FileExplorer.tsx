@@ -23,7 +23,9 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ searchQuery }) => {
         renameFile,
         restoreFile,
         getShareLink,
-        toggleStar
+        toggleStar,
+        deleteFolder,
+        renameFolder
     } = useFileStore();
 
     const [debouncedSearch] = useDebounce(searchQuery, 300);
@@ -57,6 +59,21 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ searchQuery }) => {
         if (newName && newName !== file.name) {
             renameFile(file.id, newName);
             toast.success('File renamed');
+        }
+    };
+
+    const handleRenameFolder = (folder: { id: string, name: string }) => {
+        const newName = prompt('Enter new folder name:', folder.name);
+        if (newName && newName !== folder.name) {
+            renameFolder(folder.id, newName);
+            toast.success('Folder renamed');
+        }
+    };
+
+    const handleDeleteFolder = (folder: { id: string, name: string }) => {
+        if (window.confirm(`Are you sure you want to delete folder "${folder.name}"?`)) {
+            deleteFolder(folder.id);
+            toast.success('Folder deleted');
         }
     };
 
@@ -107,8 +124,20 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ searchQuery }) => {
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-slate-900">{getViewTitle()}</h1>
-                {/* Breadcrumbs can go here */}
+                <div className="flex items-center space-x-2">
+                    <h1 className="text-2xl font-bold text-slate-900">{getViewTitle()}</h1>
+                    {currentView === 'drive' && currentFolderId && (
+                        <>
+                            <span className="text-slate-400 font-medium">/</span>
+                            <button 
+                                onClick={() => setCurrentFolder(null)}
+                                className="text-indigo-600 hover:text-indigo-800 font-medium bg-indigo-50 px-3 py-1 rounded-md transition-colors"
+                            >
+                                Back to Root
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
             {filteredFolders.length > 0 && (
@@ -118,14 +147,47 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ searchQuery }) => {
                         {filteredFolders.map((folder) => (
                             <div
                                 key={folder.id}
-                                onClick={() => setCurrentFolder(folder.id)}
-                                className="group flex items-center p-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-indigo-300 cursor-pointer transition-all shadow-sm"
+                                className="group flex items-center p-4 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-indigo-300 transition-all shadow-sm"
                             >
-                                <FolderIcon className="w-6 h-6 text-slate-400 group-hover:text-indigo-500 mr-3 flex-shrink-0" fill="currentColor" />
-                                <span className="text-sm font-medium text-slate-700 truncate">{folder.name}</span>
-                                <button className="ml-auto p-1 text-slate-400 hover:bg-slate-200 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <MoreVertical className="w-4 h-4" />
-                                </button>
+                                <div 
+                                    className="flex items-center flex-1 cursor-pointer overflow-hidden min-w-0" 
+                                    onClick={() => setCurrentFolder(folder.id)}
+                                >
+                                    <FolderIcon className="w-6 h-6 text-slate-400 group-hover:text-indigo-500 mr-3 flex-shrink-0" fill="currentColor" />
+                                    <span className="text-sm font-medium text-slate-700 truncate">{folder.name}</span>
+                                </div>
+                                <Menu as="div" className="relative inline-block text-left ml-2 flex-shrink-0">
+                                    <Menu.Button className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-200 rounded-full opacity-0 group-hover:opacity-100 transition-all focus:opacity-100 outline-none">
+                                        <MoreVertical className="w-4 h-4" />
+                                    </Menu.Button>
+                                    <Transition
+                                        enter="transition ease-out duration-100"
+                                        enterFrom="transform opacity-0 scale-95"
+                                        enterTo="transform opacity-100 scale-100"
+                                        leave="transition ease-in duration-75"
+                                        leaveFrom="transform opacity-100 scale-100"
+                                        leaveTo="transform opacity-0 scale-95"
+                                    >
+                                        <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-slate-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                                            <div className="px-1 py-1">
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <button onClick={() => handleRenameFolder(folder)} className={`${active ? 'bg-indigo-500 text-white' : 'text-slate-900'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
+                                                            <Edit2 className="mr-2 h-4 w-4" /> Rename
+                                                        </button>
+                                                    )}
+                                                </Menu.Item>
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <button onClick={() => handleDeleteFolder(folder)} className={`${active ? 'bg-red-500 text-white' : 'text-red-600'} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                        </button>
+                                                    )}
+                                                </Menu.Item>
+                                            </div>
+                                        </Menu.Items>
+                                    </Transition>
+                                </Menu>
                             </div>
                         ))}
                     </div>
